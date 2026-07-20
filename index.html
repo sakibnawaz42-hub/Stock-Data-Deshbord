@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0A0E14" />
+<title>Market Watch</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+  :root{
+    --bg:#0A0E14; --panel:#12161F; --panel2:#161B26; --border:#232937;
+    --text:#E6E9EF; --muted:#6B7484; --green:#00D9A3; --red:#FF4D6A;
+    --amber:#FFB020; --amberBg:#2A2110; --purple:#B18CFF; --purpleBg:#201A30;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; }
+  body { padding: 16px 14px 40px; max-width: 460px; margin: 0 auto; padding-top: calc(16px + env(safe-area-inset-top)); }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .title { font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:2px; color:var(--muted); font-weight:700; }
+  .sub { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--green); margin-top:3px; display:flex; align-items:center; gap:5px; }
+  .dot { width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 6px var(--green); }
+  .dot.off { background:var(--red); box-shadow:0 0 6px var(--red); }
+  button { font-family:'JetBrains Mono',monospace; font-size:11px; background:var(--panel2); border:1px solid var(--border); color:var(--text); padding:7px 12px; border-radius:8px; }
+  .errorBanner { background:#301418; border:1px solid var(--red); color:var(--red); font-size:12px; padding:8px 10px; border-radius:8px; margin-bottom:10px; display:none; }
+  .settingsPanel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; display:none; }
+  .settingsPanel.open { display:block; }
+  .settingsPanel label { font-size:11px; color:var(--muted); display:block; margin-bottom:5px; }
+  .settingsPanel input { width:100%; background:var(--panel2); border:1px solid var(--border); color:var(--text); font-family:'JetBrains Mono',monospace; font-size:12px; padding:9px 10px; border-radius:8px; margin-bottom:10px; }
+  .settingsPanel .row { display:flex; gap:8px; }
+  .settingsPanel .row button { flex:1; }
+  .tabRow { display:flex; gap:8px; overflow-x:auto; margin-bottom:14px; padding-bottom:2px; }
+  .tab { flex:0 0 auto; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px 12px; min-width:88px; text-align:left; }
+  .tab.active { background:var(--panel2); }
+  .tabSymbol { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; }
+  .tabChange { font-family:'JetBrains Mono',monospace; font-size:10px; margin-top:3px; }
+  .priceCard { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; }
+  .priceCardTop { display:flex; justify-content:space-between; align-items:flex-start; }
+  .stockName { font-size:14px; font-weight:600; }
+  .stockSymbol { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:2px; }
+  .tickTime { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); }
+  .ltpRow { display:flex; align-items:baseline; gap:10px; margin-top:12px; flex-wrap:wrap; }
+  .ltp { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:700; }
+  .changeTag { font-family:'JetBrains Mono',monospace; font-size:12px; border:1px solid; border-radius:6px; padding:2px 8px; }
+  .ohlcRow { display:flex; justify-content:space-between; margin-top:16px; border-top:1px solid var(--border); padding-top:12px; }
+  .ohlcLabel { font-size:10px; color:var(--muted); margin-bottom:3px; }
+  .ohlcValue { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; }
+  .alertStack { display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+  .alertPill { border:1px solid; border-radius:10px; padding:9px 12px; font-size:12px; font-family:'JetBrains Mono',monospace; font-weight:600; }
+  .section { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; }
+  .sectionTitle { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.5px; color:var(--muted); margin-bottom:12px; font-weight:700; }
+  .bidAskGrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .bidAskCol { border:1px solid; border-radius:10px; padding:10px 12px; background:var(--panel2); }
+  .bidAskLabel { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; letter-spacing:1px; }
+  .bidAskPrice { font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:700; margin-top:4px; }
+  .bidAskQty { font-size:11px; color:var(--muted); margin-top:2px; }
+  .ratioTop { display:flex; justify-content:space-between; margin-bottom:6px; }
+  .ratioLabel { font-size:12px; color:var(--muted); }
+  .ratioValue { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; }
+  .ratioTrack { height:6px; background:var(--panel2); border-radius:4px; overflow:hidden; }
+  .ratioFill { height:100%; background:linear-gradient(90deg, var(--red), var(--green)); border-radius:4px; }
+  .ratioHint { font-size:11px; color:var(--muted); margin-top:5px; }
+  .metricGrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .metricBox { border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:var(--panel2); }
+  .metricLabel { font-size:10px; color:var(--muted); margin-bottom:4px; }
+  .metricValue { font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; }
+  .metricSub { font-size:10px; color:var(--muted); margin-top:3px; }
+  .footerNote { font-size:11px; color:var(--muted); text-align:center; margin-top:6px; line-height:1.5; }
+  .modeBadge { font-family:'JetBrains Mono',monospace; font-size:9px; padding:2px 6px; border-radius:5px; border:1px solid var(--border); color:var(--muted); margin-left:6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="title">MARKET WATCH</div>
+    <div class="sub" id="liveSub"><span class="dot" id="liveDot"></span> LIVE · 1s refresh<span class="modeBadge" id="modeBadge">DEMO</span></div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button id="settingsBtn">⚙</button>
+    <button id="pauseBtn">❚❚ Pause</button>
+  </div>
+</div>
+
+<div class="settingsPanel" id="settingsPanel">
+  <label>Kotak Neo Backend URL (server.py jahan chal raha hai)</label>
+  <input id="backendUrl" placeholder="https://your-server.com/api/quotes" />
+  <div class="row">
+    <button id="saveBackend">Save & Connect</button>
+    <button id="useDemoBtn">Demo Mode</button>
+  </div>
+</div>
+
+<div class="errorBanner" id="errorBanner"></div>
+
+<div class="tabRow" id="tabRow"></div>
+
+<div class="priceCard">
+  <div class="priceCardTop">
+    <div>
+      <div class="stockName" id="stockName">—</div>
+      <div class="stockSymbol" id="stockSymbol">—</div>
+    </div>
+    <div class="tickTime" id="tickTime">—</div>
+  </div>
+  <div class="ltpRow">
+    <span class="ltp mono" id="ltpVal">₹0.00</span>
+    <span class="changeTag mono" id="changeTag">▲ 0.00 (0.00%)</span>
+  </div>
+  <div class="ohlcRow">
+    <div><div class="ohlcLabel">Prev Close</div><div class="ohlcValue" id="ohlcPrev">—</div></div>
+    <div><div class="ohlcLabel">Open</div><div class="ohlcValue" id="ohlcOpen">—</div></div>
+    <div><div class="ohlcLabel">High</div><div class="ohlcValue" id="ohlcHigh">—</div></div>
+    <div><div class="ohlcLabel">Low</div><div class="ohlcValue" id="ohlcLow">—</div></div>
+  </div>
+</div>
+
+<div class="alertStack" id="alertStack"></div>
+
+<div class="section">
+  <div class="sectionTitle">ORDER BOOK</div>
+  <div class="bidAskGrid">
+    <div class="bidAskCol" style="border-color:var(--green)">
+      <div class="bidAskLabel" style="color:var(--green)">BID</div>
+      <div class="bidAskPrice" id="bidPrice">₹0.00</div>
+      <div class="bidAskQty" id="bidQty">0 qty</div>
+    </div>
+    <div class="bidAskCol" style="border-color:var(--red)">
+      <div class="bidAskLabel" style="color:var(--red)">ASK</div>
+      <div class="bidAskPrice" id="askPrice">₹0.00</div>
+      <div class="bidAskQty" id="askQty">0 qty</div>
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div class="ratioTop"><span class="ratioLabel">Bid / Ask Ratio</span><span class="ratioValue mono" id="ratioVal">—</span></div>
+    <div class="ratioTrack"><div class="ratioFill" id="ratioFill" style="width:50%"></div></div>
+    <div class="ratioHint" id="ratioHint">—</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sectionTitle">VOLUME & OPEN INTEREST</div>
+  <div class="metricGrid">
+    <div class="metricBox"><div class="metricLabel">Volume</div><div class="metricValue" id="mVolume">—</div></div>
+    <div class="metricBox"><div class="metricLabel">Avg Volume</div><div class="metricValue" id="mAvgVolume">—</div></div>
+    <div class="metricBox"><div class="metricLabel">Open Interest</div><div class="metricValue" id="mOi">—</div></div>
+    <div class="metricBox"><div class="metricLabel">Change in OI</div><div class="metricValue" id="mChangeOi">—</div></div>
+    <div class="metricBox"><div class="metricLabel">OI %</div><div class="metricValue" id="mOiPct">—</div></div>
+    <div class="metricBox"><div class="metricLabel">PCR</div><div class="metricValue" id="mPcr">—</div><div class="metricSub" id="mPcrSub">—</div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sectionTitle">TREND</div>
+  <div class="metricGrid">
+    <div class="metricBox"><div class="metricLabel">VWAP</div><div class="metricValue" id="mVwap">—</div><div class="metricSub" id="mVwapSub">—</div></div>
+    <div class="metricBox"><div class="metricLabel">7 MA</div><div class="metricValue" id="mMa7">—</div><div class="metricSub">last 7 ticks</div></div>
+    <div class="metricBox"><div class="metricLabel">20 MA</div><div class="metricValue" id="mMa20">—</div><div class="metricSub">last 20 ticks</div></div>
+    <div class="metricBox"><div class="metricLabel">MA Cross</div><div class="metricValue" id="mCross">—</div></div>
+  </div>
+</div>
+
+<div class="footerNote" id="footerNote">Demo mode — settings (⚙) me apna Kotak Neo backend URL daal kar live data connect karo.</div>
+
+<script>
+const WATCHLIST_DEMO = [
+  { symbol: "NIFTY", name: "NIFTY 50", basePrice: 24850 },
+  { symbol: "BANKNIFTY", name: "BANK NIFTY", basePrice: 53200 },
+  { symbol: "RELIANCE", name: "Reliance Industries", basePrice: 2940 },
+  { symbol: "TCS", name: "Tata Consultancy", basePrice: 4120 },
+];
+
+let data = [];
+let selected = 0;
+let live = true;
+let backendUrl = localStorage.getItem('backendUrl') || "";
+let mode = backendUrl ? "LIVE" : "DEMO";
+let intervalId = null;
+let lastError = null;
+
+function seedStock(s) {
+  const open = s.basePrice * (1 + (Math.random()*0.006-0.003));
+  const prevClose = s.basePrice * (1 + (Math.random()*0.004-0.002));
+  return {
+    symbol: s.symbol, name: s.name, basePrice: s.basePrice,
+    ltp: open, open, high: open, low: open, prevClose,
+    volume: Math.floor(500000+Math.random()*200000), avgVolume: 700000,
+    bidPrice: open-0.05, askPrice: open+0.05,
+    bidQty: Math.floor(1000+Math.random()*4000), askQty: Math.floor(1000+Math.random()*4000),
+    oi: Math.floor(2000000+Math.random()*500000), prevOi: Math.floor(2000000+Math.random()*500000),
+    callOi: Math.floor(1500000+Math.random()*500000), putOi: Math.floor(1500000+Math.random()*500000),
+    priceHistory: [open], cumPV: open*1000, cumVol: 1000,
+  };
+}
+
+function generateTick(prev) {
+  const drift = (Math.random()-0.5)*(prev.basePrice*0.0009);
+  let ltp = Math.max(0.05, prev.ltp+drift);
+  const high = Math.max(prev.high, ltp);
+  const low = Math.min(prev.low, ltp);
+  const volInc = Math.floor(Math.random()*3000*(Math.random()<0.08?6:1));
+  const volume = prev.volume+volInc;
+  const oiDelta = Math.floor((Math.random()-0.45)*8000*(Math.random()<0.06?5:1));
+  const oi = Math.max(0, prev.oi+oiDelta);
+  const spread = prev.basePrice*0.0004;
+  const bidPrice = ltp-spread, askPrice = ltp+spread;
+  const bidQty = Math.max(1, prev.bidQty+Math.floor((Math.random()-0.5)*800));
+  const askQty = Math.max(1, prev.askQty+Math.floor((Math.random()-0.5)*800));
+  const callOi = Math.max(0, prev.callOi+Math.floor((Math.random()-0.5)*6000));
+  const putOi = Math.max(0, prev.putOi+Math.floor((Math.random()-0.5)*6000));
+  const priceHistory = [...prev.priceHistory, ltp].slice(-20);
+  const cumPV = prev.cumPV+ltp*volInc, cumVol = prev.cumVol+volInc;
+  return {...prev, ltp, high, low, volume, oi, prevOi: prev.oi, bidPrice, askPrice, bidQty, askQty, callOi, putOi, priceHistory, cumPV, cumVol};
+}
+
+async function tickLive() {
+  try {
+    const res = await fetch(backendUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP "+res.status);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || "backend error");
+    // Map backend fields onto our internal shape, merging with previous for
+    // derived fields (priceHistory, cumPV, cumVol) which backend doesn't send.
+    data = json.data.map((q, i) => {
+      const prev = data[i] || seedStock({ symbol:q.symbol, name:q.symbol, basePrice:q.ltp||100 });
+      const priceHistory = [...(prev.priceHistory||[]), q.ltp].slice(-20);
+      const volInc = Math.max(0,(q.volume||prev.volume||0)-(prev.volume||0));
+      const cumPV = (prev.cumPV||0) + (q.ltp||0)*volInc;
+      const cumVol = (prev.cumVol||0) + volInc || 1;
+      return {
+        symbol: q.symbol, name: q.symbol, basePrice: prev.basePrice,
+        ltp: q.ltp ?? prev.ltp, open: q.open ?? prev.open, high: q.high ?? prev.high, low: q.low ?? prev.low,
+        prevClose: q.prevClose ?? prev.prevClose,
+        volume: q.volume ?? prev.volume, avgVolume: prev.avgVolume || 700000,
+        bidPrice: q.bidPrice ?? prev.bidPrice, askPrice: q.askPrice ?? prev.askPrice,
+        bidQty: q.bidQty ?? prev.bidQty, askQty: q.askQty ?? prev.askQty,
+        oi: q.oi ?? prev.oi, prevOi: prev.oi ?? q.oi,
+        callOi: prev.callOi, putOi: prev.putOi,
+        priceHistory, cumPV, cumVol,
+      };
+    });
+    lastError = null;
+  } catch (e) {
+    lastError = e.message;
+    // keep last known data; simulate a tiny tick so UI doesn't look frozen
+    data = data.map(generateTick);
+  }
+  render();
+}
+
+function tickDemo() {
+  data = data.map(generateTick);
+  lastError = null;
+  render();
+}
+
+function ma(arr, period) {
+  if (!arr || arr.length<1) return null;
+  const slice = arr.slice(-period);
+  return slice.reduce((a,b)=>a+b,0)/slice.length;
+}
+function fmt(n, d=2) { if (n===null||n===undefined||isNaN(n)) return "—"; return Number(n).toLocaleString("en-IN",{maximumFractionDigits:d,minimumFractionDigits:d}); }
+function fmtInt(n) { if (n===null||n===undefined||isNaN(n)) return "—"; return Math.round(n).toLocaleString("en-IN"); }
+
+function render() {
+  document.getElementById('modeBadge').textContent = mode;
+  document.getElementById('liveDot').className = 'dot' + (lastError ? ' off' : '');
+  document.getElementById('errorBanner').style.display = lastError ? 'block' : 'none';
+  document.getElementById('errorBanner').textContent = lastError ? ('Live feed issue: '+lastError+' — pichla/demo data dikh raha hai.') : '';
+
+  // tabs
+  const tabRow = document.getElementById('tabRow');
+  tabRow.innerHTML = '';
+  data.forEach((s,i) => {
+    const ch = s.ltp - s.prevClose;
+    const el = document.createElement('button');
+    el.className = 'tab' + (i===selected ? ' active' : '');
+    el.style.borderColor = i===selected ? (ch>=0?'var(--green)':'var(--red)') : 'var(--border)';
+    el.innerHTML = `<div class="tabSymbol">${s.symbol}</div><div class="tabChange" style="color:${ch>=0?'var(--green)':'var(--red)'}">${ch>=0?'▲':'▼'} ${fmt(Math.abs(ch/s.prevClose*100))}%</div>`;
+    el.onclick = () => { selected = i; render(); };
+    tabRow.appendChild(el);
+  });
+
+  if (!data.length) return;
+  const s = data[selected];
+  const change = s.ltp - s.prevClose;
+  const changePct = (change/s.prevClose)*100;
+  const isUp = change >= 0;
+
+  document.getElementById('stockName').textContent = s.name;
+  document.getElementById('stockSymbol').textContent = s.symbol;
+  document.getElementById('tickTime').textContent = 'tick ' + new Date().toLocaleTimeString('en-IN');
+  document.getElementById('ltpVal').textContent = '₹'+fmt(s.ltp);
+  document.getElementById('ltpVal').style.color = isUp?'var(--green)':'var(--red)';
+  const ctag = document.getElementById('changeTag');
+  ctag.textContent = `${isUp?'▲':'▼'} ${fmt(Math.abs(change))} (${fmt(Math.abs(changePct))}%)`;
+  ctag.style.color = isUp?'var(--green)':'var(--red)';
+  ctag.style.borderColor = isUp?'var(--green)':'var(--red)';
+
+  document.getElementById('ohlcPrev').textContent = '₹'+fmt(s.prevClose);
+  document.getElementById('ohlcOpen').textContent = '₹'+fmt(s.open);
+  document.getElementById('ohlcHigh').textContent = '₹'+fmt(s.high);
+  document.getElementById('ohlcLow').textContent = '₹'+fmt(s.low);
+
+  const bidAskRatio = s.askQty>0 ? s.bidQty/s.askQty : null;
+  const changeInOi = s.oi - s.prevOi;
+  const oiPct = s.prevOi ? (changeInOi/s.prevOi)*100 : 0;
+  const volSpike = s.volume > s.avgVolume*1.5;
+  const oiSpike = Math.abs(oiPct) > 2;
+  const vwap = s.cumVol>0 ? s.cumPV/s.cumVol : s.ltp;
+  const vwapDiff = s.ltp - vwap;
+  const ma7 = ma(s.priceHistory,7), ma20 = ma(s.priceHistory,20);
+  const pcr = s.callOi>0 ? s.putOi/s.callOi : null;
+  const pcrLabel = pcr===null?'—':(pcr>1.3?'Oversold zone':pcr<0.7?'Overbought zone':'Neutral');
+
+  const alertStack = document.getElementById('alertStack');
+  alertStack.innerHTML = '';
+  if (volSpike) {
+    const d = document.createElement('div'); d.className='alertPill';
+    d.style.background='var(--amberBg)'; d.style.borderColor='var(--amber)'; d.style.color='var(--amber)';
+    d.textContent = `⚡ VOLUME SPIKE — ${fmt(s.volume/s.avgVolume*100,0)}% of avg`;
+    alertStack.appendChild(d);
+  }
+  if (oiSpike) {
+    const d = document.createElement('div'); d.className='alertPill';
+    d.style.background='var(--purpleBg)'; d.style.borderColor='var(--purple)'; d.style.color='var(--purple)';
+    d.textContent = `🔥 OI SPIKE — ${oiPct>=0?'+':''}${fmt(oiPct)}% change`;
+    alertStack.appendChild(d);
+  }
+
+  document.getElementById('bidPrice').textContent = '₹'+fmt(s.bidPrice);
+  document.getElementById('bidQty').textContent = fmtInt(s.bidQty)+' qty';
+  document.getElementById('askPrice').textContent = '₹'+fmt(s.askPrice);
+  document.getElementById('askQty').textContent = fmtInt(s.askQty)+' qty';
+  document.getElementById('ratioVal').textContent = bidAskRatio?fmt(bidAskRatio)+'x':'—';
+  document.getElementById('ratioFill').style.width = (bidAskRatio?Math.min(100,Math.max(0,bidAskRatio/(bidAskRatio+1)*100)):50)+'%';
+  document.getElementById('ratioHint').textContent = bidAskRatio>1.2?'Buyers dominant':bidAskRatio<0.8?'Sellers dominant':'Balanced';
+
+  document.getElementById('mVolume').textContent = fmtInt(s.volume);
+  document.getElementById('mAvgVolume').textContent = fmtInt(s.avgVolume);
+  document.getElementById('mOi').textContent = fmtInt(s.oi);
+  const mChangeOi = document.getElementById('mChangeOi');
+  mChangeOi.textContent = (changeInOi>=0?'+':'')+fmtInt(changeInOi);
+  mChangeOi.style.color = changeInOi>=0?'var(--green)':'var(--red)';
+  const mOiPct = document.getElementById('mOiPct');
+  mOiPct.textContent = (oiPct>=0?'+':'')+fmt(oiPct)+'%';
+  mOiPct.style.color = oiPct>=0?'var(--green)':'var(--red)';
+  document.getElementById('mPcr').textContent = pcr?fmt(pcr):'—';
+  document.getElementById('mPcrSub').textContent = pcrLabel;
+
+  const mVwap = document.getElementById('mVwap');
+  mVwap.textContent = '₹'+fmt(vwap);
+  mVwap.style.color = vwapDiff>=0?'var(--green)':'var(--red)';
+  document.getElementById('mVwapSub').textContent = vwapDiff>=0?'Above VWAP':'Below VWAP';
+  document.getElementById('mMa7').textContent = ma7?'₹'+fmt(ma7):'—';
+  document.getElementById('mMa20').textContent = ma20?'₹'+fmt(ma20):'—';
+  const mCross = document.getElementById('mCross');
+  if (ma7 && ma20) { mCross.textContent = ma7>ma20?'Bullish':'Bearish'; mCross.style.color = ma7>ma20?'var(--green)':'var(--red)'; }
+  else { mCross.textContent='—'; mCross.style.color='var(--muted)'; }
+}
+
+function startLoop() {
+  clearInterval(intervalId);
+  if (!live) return;
+  intervalId = setInterval(() => { mode==='LIVE' ? tickLive() : tickDemo(); }, 1000);
+}
+
+document.getElementById('pauseBtn').onclick = () => {
+  live = !live;
+  document.getElementById('pauseBtn').textContent = live ? '❚❚ Pause' : '▶ Resume';
+  startLoop();
+};
+document.getElementById('settingsBtn').onclick = () => {
+  document.getElementById('settingsPanel').classList.toggle('open');
+  document.getElementById('backendUrl').value = backendUrl;
+};
+document.getElementById('saveBackend').onclick = () => {
+  const val = document.getElementById('backendUrl').value.trim();
+  if (val) {
+    backendUrl = val; mode = 'LIVE';
+    localStorage.setItem('backendUrl', val);
+    document.getElementById('footerNote').textContent = 'Kotak Neo backend se connected — har 1 second live data refresh.';
+  }
+  document.getElementById('settingsPanel').classList.remove('open');
+};
+document.getElementById('useDemoBtn').onclick = () => {
+  backendUrl = ''; mode = 'DEMO';
+  localStorage.removeItem('backendUrl');
+  document.getElementById('footerNote').textContent = 'Demo mode — settings (⚙) me apna Kotak Neo backend URL daal kar live data connect karo.';
+  document.getElementById('settingsPanel').classList.remove('open');
+};
+
+// init
+data = WATCHLIST_DEMO.map(seedStock);
+render();
+startLoop();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
