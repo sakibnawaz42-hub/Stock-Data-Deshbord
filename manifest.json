@@ -1,0 +1,14 @@
+{
+  "name": "Market Watch — Live Stock Dashboard",
+  "short_name": "MarketWatch",
+  "description": "Live stock dashboard with OI, volume, bid/ask, VWAP, MA and PCR analytics, connected to Kotak Neo.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0E14",
+  "theme_color": "#0A0E14",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
